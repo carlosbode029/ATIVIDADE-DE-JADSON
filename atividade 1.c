@@ -25,7 +25,13 @@
  	
  	
  	
- 	
+ 	//Este é um programa em C que solicita ao usuário que insira dois números inteiros e, em seguida, 
+	//calcula e exibe a soma desses dois números. Ele usa as funções printf e scanf para exibir mensagens e obter valores do usuário.
+
+
+
+
+
  	
  	
  	
