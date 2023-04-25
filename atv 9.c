@@ -12,3 +12,6 @@ int main() {
 
     return 0;
 }
+
+// Este é um programa em C que solicita que o usuário insira um número inteiro e, em seguida, exibe a tabuada desse número de 1 a 10. Ele utiliza um loop for para iterar
+// através dos números de 1 a 10 e exibir o resultado da multiplicação entre o número inserido pelo usuário e o número do loop
