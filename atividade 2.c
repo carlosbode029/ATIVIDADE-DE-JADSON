@@ -24,3 +24,7 @@
  	
 
  }
+
+
+//Este é um programa em C para calcular a área de um círculo, que usa as funções printf e scanf para obter o valor do raio do usuário e usa a fórmula A = πr² 
+//para calcular  a área. No entanto, há um erro na última instrução printf que deve ser corrigido para exibir o resultado corretamente.
