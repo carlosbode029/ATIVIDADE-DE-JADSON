@@ -15,3 +15,9 @@ int main() {
     return 0;
 }
 
+ //Este é um programa em C que solicita ao usuário que digite um número inteiro e, em seguida, verifica se o número é par ou ímpar. Ele usa a função scanf para obter 
+//o valor do usuário e a estrutura de decisão if-else para testar se o número é divisível por 2 ou não. O resultado é exibido na tela usando a função printf.
+
+
+
+
