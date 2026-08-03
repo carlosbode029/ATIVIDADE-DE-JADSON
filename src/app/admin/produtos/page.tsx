@@ -19,9 +19,18 @@ export default async function AdminProdutosPage({
     page: params.page ? Number(params.page) : 1,
   });
 
+  const serializedResult = {
+    ...result,
+    items: result.items.map((product) => ({
+      ...product,
+      price: Number(product.price),
+      promoPrice: product.promoPrice ? Number(product.promoPrice) : null,
+    })),
+  };
+
   return (
     <Suspense fallback={null}>
-      <ProductsTable result={result} />
+      <ProductsTable result={serializedResult} />
     </Suspense>
   );
 }

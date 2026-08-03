@@ -33,10 +33,7 @@ import {
   createProduct,
   updateProduct,
 } from "@/modules/catalog/actions/product.actions";
-import type {
-  getProductById,
-  listProductOptions,
-} from "@/modules/catalog/queries/product.queries";
+import type { listProductOptions } from "@/modules/catalog/queries/product.queries";
 import type { listCategoryTree } from "@/modules/catalog/queries/category.queries";
 import type {
   listBrands,
@@ -45,6 +42,7 @@ import type {
   listSeasons,
   listTeams,
 } from "@/modules/catalog/queries/reference-data.queries";
+import { EMPTY_PRODUCT_FORM_VALUES } from "@/modules/catalog/services/product-form-values";
 import {
   productModelValues,
   productSchema,
@@ -53,7 +51,6 @@ import {
 } from "@/modules/catalog/schemas/product.schema";
 
 type CategoryTree = Awaited<ReturnType<typeof listCategoryTree>>;
-type Product = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 type ProductOption = Awaited<ReturnType<typeof listProductOptions>>[number];
 
 type ProductFormProps = {
@@ -64,91 +61,9 @@ type ProductFormProps = {
   countries: Awaited<ReturnType<typeof listCountries>>;
   teams: Awaited<ReturnType<typeof listTeams>>;
   relatedOptions: ProductOption[];
-  product?: Product;
+  productId?: string;
+  defaultValues?: ProductInput;
 };
-
-function buildDefaultValues(product?: Product): ProductInput {
-  if (!product) {
-    return {
-      name: "",
-      description: "",
-      sku: "",
-      internalCode: "",
-      model: "TORCEDOR",
-      sleeveType: "CURTA",
-      price: 0,
-      promoPrice: undefined,
-      weightGrams: 200,
-      isPreOrder: false,
-      leadTimeDays: undefined,
-      allowsCustomName: true,
-      allowsCustomNumber: true,
-      allowsPatch: true,
-      isActive: true,
-      isFeatured: false,
-      metaTitle: "",
-      metaDescription: "",
-      categoryId: "",
-      subcategoryId: "",
-      brandId: "",
-      seasonId: "",
-      leagueId: "",
-      countryId: "",
-      teamId: "",
-      images: [],
-      videos: [],
-      variants: [],
-      patches: [],
-      relatedProductIds: [],
-    };
-  }
-
-  return {
-    name: product.name,
-    description: product.description,
-    sku: product.sku,
-    internalCode: product.internalCode,
-    model: product.model,
-    sleeveType: product.sleeveType,
-    price: Number(product.price),
-    promoPrice: product.promoPrice ? Number(product.promoPrice) : undefined,
-    weightGrams: product.weightGrams,
-    isPreOrder: product.isPreOrder,
-    leadTimeDays: product.leadTimeDays ?? undefined,
-    allowsCustomName: product.allowsCustomName,
-    allowsCustomNumber: product.allowsCustomNumber,
-    allowsPatch: product.allowsPatch,
-    isActive: product.isActive,
-    isFeatured: product.isFeatured,
-    metaTitle: product.metaTitle ?? "",
-    metaDescription: product.metaDescription ?? "",
-    categoryId: product.categoryId,
-    subcategoryId: product.subcategoryId ?? "",
-    brandId: product.brandId ?? "",
-    seasonId: product.seasonId ?? "",
-    leagueId: product.leagueId ?? "",
-    countryId: product.countryId ?? "",
-    teamId: product.teamId ?? "",
-    images: product.images.map((image) => ({ url: image.url })),
-    videos: product.videos.map((video) => ({ url: video.url })),
-    variants: product.variants.map((variant) => ({
-      id: variant.id,
-      size: variant.size,
-      sku: variant.sku,
-      stockQuantity: variant.stockQuantity,
-      lowStockThreshold: variant.lowStockThreshold,
-      priceOverride: variant.priceOverride
-        ? Number(variant.priceOverride)
-        : undefined,
-    })),
-    patches: product.patches.map((patch) => ({
-      id: patch.id,
-      name: patch.name,
-      price: Number(patch.price),
-    })),
-    relatedProductIds: product.relatedFrom.map((rel) => rel.relatedProductId),
-  };
-}
 
 export function ProductForm({
   categories,
@@ -158,15 +73,16 @@ export function ProductForm({
   countries,
   teams,
   relatedOptions,
-  product,
+  productId,
+  defaultValues,
 }: ProductFormProps) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
-  const isEditing = Boolean(product);
+  const isEditing = Boolean(productId);
 
   const form = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
-    defaultValues: buildDefaultValues(product),
+    defaultValues: defaultValues ?? EMPTY_PRODUCT_FORM_VALUES,
   });
 
   const imagesArray = useFieldArray({ control: form.control, name: "images" });
@@ -183,8 +99,8 @@ export function ProductForm({
 
   async function onSubmit(values: ProductInput) {
     setFormError(null);
-    const result = product
-      ? await updateProduct(product.id, values)
+    const result = productId
+      ? await updateProduct(productId, values)
       : await createProduct(values);
 
     if (result?.error) {
@@ -192,7 +108,7 @@ export function ProductForm({
       return;
     }
 
-    if (product) {
+    if (productId) {
       toast.success("Produto atualizado.");
       router.refresh();
     }

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { syncUserFromSupabase } from "@/modules/auth/services/user-sync.service";
+import { mergeGuestCartIntoUser } from "@/modules/cart/services/merge-guest-cart";
 
 /**
  * Destino dos links de e-mail (confirmação de cadastro e recuperação de
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       if (data.user) {
-        await syncUserFromSupabase(data.user);
+        const user = await syncUserFromSupabase(data.user);
+        await mergeGuestCartIntoUser(user.id);
       }
       return NextResponse.redirect(`${origin}${next}`);
     }

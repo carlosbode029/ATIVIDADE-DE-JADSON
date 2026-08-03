@@ -14,6 +14,7 @@ import {
   listSeasons,
   listTeams,
 } from "@/modules/catalog/queries/reference-data.queries";
+import { toProductFormValues } from "@/modules/catalog/services/product-form-values";
 
 export const metadata: Metadata = {
   title: "Editar produto",
@@ -61,7 +62,8 @@ export default async function EditarProdutoPage({
         countries={countries}
         teams={teams}
         relatedOptions={relatedOptions}
-        product={product}
+        productId={product.id}
+        defaultValues={toProductFormValues(product)}
       />
     </div>
   );

@@ -20,13 +20,23 @@ import { deleteProduct } from "@/modules/catalog/actions/product.actions";
 import type { listProductsAdmin } from "@/modules/catalog/queries/product.queries";
 
 type ProductsResult = Awaited<ReturnType<typeof listProductsAdmin>>;
+type SerializedProductItem = Omit<
+  ProductsResult["items"][number],
+  "price" | "promoPrice"
+> & {
+  price: number;
+  promoPrice: number | null;
+};
+export type SerializedProductsResult = Omit<ProductsResult, "items"> & {
+  items: SerializedProductItem[];
+};
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
 
-export function ProductsTable({ result }: { result: ProductsResult }) {
+export function ProductsTable({ result }: { result: SerializedProductsResult }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 

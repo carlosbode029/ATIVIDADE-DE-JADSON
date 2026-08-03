@@ -49,6 +49,27 @@ const BRANDS = ["Nike", "Adidas", "Puma", "Umbro", "Kappa", "New Balance"];
 
 const SEASONS = [{ label: "2024/2025", startYear: 2024, endYear: 2025 }];
 
+const CARRIERS = [
+  {
+    name: "Correios",
+    trackingUrlTemplate: "https://rastreamento.correios.com.br/app/index.php?codigo={codigo}",
+    methods: [
+      { name: "PAC", basePrice: 24.9, pricePerKg: 3.5, estimatedDaysMin: 6, estimatedDaysMax: 12 },
+      { name: "SEDEX", basePrice: 39.9, pricePerKg: 5.5, estimatedDaysMin: 2, estimatedDaysMax: 4 },
+    ],
+  },
+];
+
+const COUPONS = [
+  {
+    code: "BEMVINDO10",
+    type: "PERCENTAGE" as const,
+    value: 10,
+    minOrderValue: 150,
+    maxUses: null,
+  },
+];
+
 const TEAMS = [
   { name: "Flamengo", countryCode: "BR", leagues: ["Brasileirão Série A"] },
   { name: "Palmeiras", countryCode: "BR", leagues: ["Brasileirão Série A"] },
@@ -164,6 +185,44 @@ async function seedTeams() {
   }
 }
 
+async function seedShipping() {
+  for (const carrier of CARRIERS) {
+    const existingCarrier = await prisma.carrier.findFirst({
+      where: { name: carrier.name },
+    });
+
+    const created =
+      existingCarrier ??
+      (await prisma.carrier.create({
+        data: {
+          name: carrier.name,
+          trackingUrlTemplate: carrier.trackingUrlTemplate,
+        },
+      }));
+
+    for (const method of carrier.methods) {
+      const existing = await prisma.shippingMethod.findFirst({
+        where: { carrierId: created.id, name: method.name },
+      });
+      if (existing) continue;
+
+      await prisma.shippingMethod.create({
+        data: { ...method, carrierId: created.id },
+      });
+    }
+  }
+}
+
+async function seedCoupons() {
+  for (const coupon of COUPONS) {
+    await prisma.coupon.upsert({
+      where: { code: coupon.code },
+      update: {},
+      create: coupon,
+    });
+  }
+}
+
 async function main() {
   await seedCategories();
   await seedCountries();
@@ -171,9 +230,11 @@ async function main() {
   await seedBrands();
   await seedSeasons();
   await seedTeams();
+  await seedShipping();
+  await seedCoupons();
 
   console.log(
-    `Seed concluído: ${CATEGORIES.length} categorias, ${COUNTRIES.length} países, ${LEAGUES.length} ligas, ${BRANDS.length} marcas, ${SEASONS.length} temporada(s), ${TEAMS.length} times.`,
+    `Seed concluído: ${CATEGORIES.length} categorias, ${COUNTRIES.length} países, ${LEAGUES.length} ligas, ${BRANDS.length} marcas, ${SEASONS.length} temporada(s), ${TEAMS.length} times, ${CARRIERS.length} transportadora(s), ${COUPONS.length} cupom(ns).`,
   );
 }
 

@@ -128,6 +128,40 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   PDP inclui JSON-LD (`schema.org/Product`) e o CTA principal é "Comprar
   pelo WhatsApp" (monta a mensagem com tamanho/patch/personalização/total),
   já que o carrinho é entregue na Fase 4.
+- **Carrinho & Checkout (Fase 4)**: carrinho persiste por usuário
+  (`Cart.userId`) ou visitante (cookie httpOnly + `Cart.sessionId`); ao
+  logar, o carrinho de visitante é mesclado no carrinho da conta
+  (`modules/cart/services/merge-guest-cart.ts`, chamado a partir de todo
+  ponto que estabelece sessão: login, cadastro, OAuth, confirmação de
+  e-mail). Checkout exige conta (schema não permite `Order` sem `userId`) —
+  o carrinho de visitante sobrevive ao redirecionamento para `/login`
+  graças ao merge. Frete e cupom precisam existir para o checkout
+  funcionar, então a Fase 4 adiantou um CRUD mínimo de transportadora/frete
+  (`modules/shipping`) e cupom (`modules/marketing`) que originalmente
+  estava previsto só para a Fase 7 — reaproveitando o `EntityFormDialog`
+  genérico da Fase 2. `createOrder` roda em uma única transação: snapshot
+  dos itens em `OrderItem` (nome/tamanho/preço/personalização no momento da
+  compra, imune a mudanças futuras no catálogo), cria o `Payment` como
+  `PENDING` e limpa o carrinho — sem decrementar estoque ainda, isso só
+  acontece quando o pagamento é confirmado (webhook da Fase 5). Reestoque
+  de itens sob risco de overselling entre o checkout e o pagamento é aceito
+  como trade-off deste estágio.
+- **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
+  Server Component pode usar `Decimal` (price, value, basePrice...)
+  livremente, mas o valor bruto **não pode ser passado como prop para um
+  Client Component** — o React quebra em runtime com "Only plain objects
+  can be passed to Client Components", e isso só aparece ao navegar a
+  página de verdade (não é pego por `tsc`, `next lint` nem `next build`,
+  já que rotas dinâmicas não são renderizadas em build time). A Fase 4
+  pegou essa falha em `CartItemRow` e em quatro managers do admin
+  (`ProductForm`, `ProductsTable`, `CouponManager`,
+  `ShippingMethodManager`) que recebiam entidades do Prisma inteiras como
+  prop. Padrão adotado: todo Client Component que exibe dinheiro recebe
+  `number` já convertido (`Number(campo)`) — a conversão acontece no
+  Server Component (page) ou em um serviço server-only
+  (`modules/catalog/services/product-form-values.ts`), nunca dentro do
+  próprio Client Component. Ao criar uma tela nova, sempre checar essa
+  fronteira testando a página no navegador, não só com typecheck/build.
 
 ## Fases de desenvolvimento
 
@@ -137,7 +171,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 1. Auth & Contas — **concluída**
 2. Catálogo Base — **concluída**
 3. Vitrine & Busca — **concluída**
-4. Carrinho & Checkout
+4. Carrinho & Checkout — **concluída**
 5. Pagamentos (Mercado Pago)
 6. Pedidos & Rastreio
 7. Painel Admin completo

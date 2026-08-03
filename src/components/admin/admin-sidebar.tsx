@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   Globe2,
   LayoutDashboard,
+  Percent,
   Shirt,
   Tags,
+  Truck,
   Trophy,
   Users,
 } from "lucide-react";
@@ -22,6 +24,9 @@ const LINKS = [
   { href: "/admin/ligas", label: "Ligas", icon: Trophy },
   { href: "/admin/paises", label: "Países", icon: Globe2 },
   { href: "/admin/temporadas", label: "Temporadas", icon: Trophy },
+  { href: "/admin/transportadoras", label: "Transportadoras", icon: Truck },
+  { href: "/admin/fretes", label: "Fretes", icon: Truck },
+  { href: "/admin/cupons", label: "Cupons", icon: Percent },
 ] as const;
 
 export function AdminSidebar() {

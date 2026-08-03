@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { translateAuthError } from "@/modules/auth/services/translate-auth-error";
 import { syncUserFromSupabase } from "@/modules/auth/services/user-sync.service";
+import { mergeGuestCartIntoUser } from "@/modules/cart/services/merge-guest-cart";
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -44,7 +45,8 @@ export async function signUp(input: SignUpInput): Promise<ActionResult> {
   }
 
   if (data.user) {
-    await syncUserFromSupabase(data.user);
+    const user = await syncUserFromSupabase(data.user);
+    await mergeGuestCartIntoUser(user.id);
   }
 
   revalidatePath("/", "layout");
@@ -67,7 +69,8 @@ export async function signInWithPassword(
   }
 
   if (data.user) {
-    await syncUserFromSupabase(data.user);
+    const user = await syncUserFromSupabase(data.user);
+    await mergeGuestCartIntoUser(user.id);
   }
 
   revalidatePath("/", "layout");

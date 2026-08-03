@@ -45,6 +45,7 @@ type AddressFormDialogProps = {
   trigger: ReactNode;
   addressId?: string;
   defaultValues?: AddressInput;
+  onSuccess?: () => void;
 };
 
 const EMPTY_VALUES: AddressInput = {
@@ -65,6 +66,7 @@ export function AddressFormDialog({
   trigger,
   addressId,
   defaultValues,
+  onSuccess,
 }: AddressFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -89,6 +91,7 @@ export function AddressFormDialog({
     toast.success(isEditing ? "Endereço atualizado." : "Endereço adicionado.");
     setOpen(false);
     form.reset(isEditing ? values : EMPTY_VALUES);
+    onSuccess?.();
   }
 
   return (

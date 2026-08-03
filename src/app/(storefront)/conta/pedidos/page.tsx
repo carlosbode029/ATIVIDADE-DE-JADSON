@@ -2,13 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/modules/auth/queries/get-current-user";
+import { ORDER_STATUS_LABELS } from "@/modules/orders/constants";
 import { getOrdersByUserId } from "@/modules/orders/queries/get-orders";
 
 export const metadata: Metadata = {
   title: "Meus pedidos",
 };
+
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
 
 export default async function PedidosPage() {
   const user = await getCurrentUser();
@@ -36,21 +43,21 @@ export default async function PedidosPage() {
   return (
     <section className="space-y-4">
       {orders.map((order) => (
-        <div
+        <Link
           key={order.id}
-          className="flex items-center justify-between rounded-xl border border-border bg-card p-4"
+          href={`/pedido/${order.id}`}
+          className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-gold/50"
         >
           <div>
             <p className="font-medium">Pedido #{order.orderNumber}</p>
-            <p className="text-sm text-muted-foreground">{order.status}</p>
+            <Badge variant="secondary" className="mt-1">
+              {ORDER_STATUS_LABELS[order.status]}
+            </Badge>
           </div>
           <p className="font-semibold">
-            {new Intl.NumberFormat("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            }).format(Number(order.total))}
+            {currencyFormatter.format(Number(order.total))}
           </p>
-        </div>
+        </Link>
       ))}
     </section>
   );

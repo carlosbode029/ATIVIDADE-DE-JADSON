@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { MessageCircle, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
 
 import { FavoriteButton } from "@/components/storefront/favorite-button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { addToCart } from "@/modules/cart/actions/cart.actions";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -53,6 +56,8 @@ export function ProductPurchasePanel({
   leadTimeDays: number | null;
   isFavorited: boolean;
 }) {
+  const router = useRouter();
+  const [isAdding, startAdding] = useTransition();
   const firstInStock = variants.find((v) => v.stockQuantity > 0);
   const [sizeId, setSizeId] = useState(firstInStock?.id ?? variants[0]?.id ?? "");
   const [patchId, setPatchId] = useState<string>("");
@@ -92,6 +97,30 @@ export function ProductPurchasePanel({
     totalPrice,
     productUrl,
   ]);
+
+  function handleAddToCart() {
+    if (!selectedVariant) return;
+
+    startAdding(async () => {
+      const result = await addToCart({
+        productId,
+        productVariantId: selectedVariant.id,
+        quantity,
+        patchId: patchId || undefined,
+        customName: allowsCustomName && customName ? customName : undefined,
+        customNumber:
+          allowsCustomNumber && customNumber ? customNumber : undefined,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Adicionado ao carrinho.");
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -211,16 +240,15 @@ export function ProductPurchasePanel({
 
       <div className="flex gap-2">
         <Button
-          asChild
+          type="button"
           variant="gold"
           size="lg"
           className="flex-1"
-          disabled={outOfStock}
+          disabled={outOfStock || isAdding}
+          onClick={handleAddToCart}
         >
-          <a href={whatsappHref} target="_blank" rel="noreferrer noopener">
-            <MessageCircle className="size-4" />
-            {outOfStock ? "Tamanho esgotado" : "Comprar pelo WhatsApp"}
-          </a>
+          <ShoppingBag className="size-4" />
+          {outOfStock ? "Tamanho esgotado" : "Adicionar ao carrinho"}
         </Button>
         <FavoriteButton
           productId={productId}
@@ -228,6 +256,19 @@ export function ProductPurchasePanel({
           className="size-11 border border-border"
         />
       </div>
+
+      <Button
+        asChild
+        variant="outline"
+        size="lg"
+        className="w-full"
+        disabled={outOfStock}
+      >
+        <a href={whatsappHref} target="_blank" rel="noreferrer noopener">
+          <MessageCircle className="size-4" />
+          Comprar pelo WhatsApp
+        </a>
+      </Button>
     </div>
   );
 }
