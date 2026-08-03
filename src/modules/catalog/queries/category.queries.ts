@@ -16,3 +16,9 @@ export function listTopLevelCategories() {
     orderBy: { name: "asc" },
   });
 }
+
+export function getCategoryBySlug(slug: string) {
+  return prisma.category.findFirst({
+    where: { slug, isActive: true },
+  });
+}

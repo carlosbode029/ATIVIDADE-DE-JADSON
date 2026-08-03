@@ -110,6 +110,24 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   e patches são reconciliados por id — podem estar referenciados em
   `OrderItem`/`CartItem`, então a remoção de um item em uso falha com uma
   mensagem amigável em vez de quebrar a integridade referencial.
+- **Vitrine (Fase 3)**: listagem filtrável (`modules/catalog/queries/storefront-product.queries.ts`)
+  compartilhada por `/produtos`, `/busca`, `/categorias/[slug]` e
+  `/times/[slug]` através do componente `ProductListing` — cada rota só
+  define o filtro inicial (categoria/time/busca) e delega o resto. Filtros
+  (categoria, time, país, competição, temporada, tamanho) e ordenação vivem
+  na URL (`ProductFilters`), então são compartilháveis e voltam ao dar
+  refresh. Não existe uma entidade "Jogador" dedicada no schema — a busca
+  por jogador é coberta pelo texto livre sobre nome/descrição do produto
+  (ex.: um produto chamado "Camisa Argentina I 2026 — Messi" é encontrado
+  buscando "Messi"), decisão que evita expandir o modelo de dados sem
+  necessidade real ainda. Preços (`Decimal` do Prisma) são convertidos para
+  `number` antes de cruzar a fronteira Server → Client Component
+  (`ProductCard`/`ProductPurchasePanel` recebem apenas primitivos
+  serializáveis). Favoritar é uma Server Action real (`toggleFavorite`) —
+  exige login e redireciona para `/login?redirectTo=...` quando anônimo. A
+  PDP inclui JSON-LD (`schema.org/Product`) e o CTA principal é "Comprar
+  pelo WhatsApp" (monta a mensagem com tamanho/patch/personalização/total),
+  já que o carrinho é entregue na Fase 4.
 
 ## Fases de desenvolvimento
 
@@ -118,7 +136,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 0. Fundação (scaffold, tema, Prisma, integrações base) — **concluída**
 1. Auth & Contas — **concluída**
 2. Catálogo Base — **concluída**
-3. Vitrine & Busca
+3. Vitrine & Busca — **concluída**
 4. Carrinho & Checkout
 5. Pagamentos (Mercado Pago)
 6. Pedidos & Rastreio

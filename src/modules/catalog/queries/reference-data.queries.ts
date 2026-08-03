@@ -25,3 +25,7 @@ export function listTeams() {
     include: { country: true, leagues: { include: { league: true } } },
   });
 }
+
+export function getTeamBySlug(slug: string) {
+  return prisma.team.findUnique({ where: { slug } });
+}
