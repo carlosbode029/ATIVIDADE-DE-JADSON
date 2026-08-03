@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, FileText } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PaymentPanel } from "@/components/storefront/payment-panel";
 import { getCurrentUser } from "@/modules/auth/queries/get-current-user";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
 } from "@/modules/orders/constants";
 import { getOrderById } from "@/modules/orders/queries/get-order-by-id";
+import {
+  extractBoletoDisplayData,
+  extractPixDisplayData,
+} from "@/modules/payments/services/extract-payment-display-data";
 
 export const metadata: Metadata = {
   title: "Pedido",
@@ -141,11 +148,31 @@ export default async function PedidoPage({
         </div>
       </div>
 
-      {order.status === "PENDING" && (
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          A cobrança via Pix, cartão ou boleto será habilitada em breve — em
-          caso de dúvidas, fale conosco pelo WhatsApp.
-        </p>
+      {order.status === "PENDING" && payment && (
+        <div className="mt-6">
+          <PaymentPanel
+            orderId={order.id}
+            orderTotal={Number(order.total)}
+            paymentMethod={payment.method}
+            paymentStatus={payment.status}
+            userEmail={user.email}
+            userDocument={user.document}
+            publicKey={process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ?? null}
+            initialPixDisplay={extractPixDisplayData(payment.rawPayload)}
+            initialBoletoDisplay={extractBoletoDisplayData(payment.rawPayload)}
+          />
+        </div>
+      )}
+
+      {order.status !== "PENDING" && order.status !== "CANCELLED" && (
+        <div className="mt-6 text-center">
+          <Button asChild variant="outline">
+            <Link href={`/pedido/${order.id}/comprovante`}>
+              <FileText className="size-4" />
+              Ver / baixar comprovante
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   );

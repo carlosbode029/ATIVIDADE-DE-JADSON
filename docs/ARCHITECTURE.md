@@ -146,6 +146,40 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   acontece quando o pagamento é confirmado (webhook da Fase 5). Reestoque
   de itens sob risco de overselling entre o checkout e o pagamento é aceito
   como trade-off deste estágio.
+- **Pagamentos (Fase 5)**: o `Payment` criado como `PENDING` no checkout
+  (Fase 4) é reaproveitado/atualizado no lugar pelas Server Actions de
+  cobrança (`modules/payments/actions/payment.actions.ts`) — não se cria
+  uma nova linha por tentativa, então o método de pagamento fica travado no
+  que foi escolhido no checkout (retry com outro método fica fora de
+  escopo por ora). `processPaymentUpdate`
+  (`modules/payments/services/process-payment-update.ts`) é o único lugar
+  que aplica os efeitos colaterais de aprovação (`Order.status = PAID`,
+  baixa de estoque por `ProductVariant`, `StockMovement`, `FinanceEntry`) ou
+  de recusa/cancelamento (`Order.status = CANCELLED`), e é idempotente: só
+  age se o status recebido for diferente do já salvo. Isso é chamado tanto
+  pelo webhook quanto por `createCardCharge` (cartão frequentemente resolve
+  na hora, sem esperar webhook) e por `checkPaymentStatus` (botão "verificar
+  pagamento" manual). Armadilha real encontrada: `createCardCharge`
+  originalmente gravava o status mapeado diretamente no `Payment` antes de
+  chamar `processPaymentUpdate` — como a comparação de idempotência olha
+  `payment.status` já persistido, ela via "nada mudou" e pulava a transação
+  inteira (pedido nunca virava `PAID`, estoque nunca baixava). Corrigido
+  fazendo esse update inicial gravar apenas `mpPaymentId`/`installments`,
+  deixando a transição de status inteiramente a cargo de
+  `processPaymentUpdate`. QR code (Pix) e linha digitável/boleto são
+  extraídos do payload do Mercado Pago por
+  `modules/payments/services/extract-payment-display-data.ts`, usada tanto
+  para devolver os dados de exibição direto na resposta da Server Action
+  quanto para reconstruir a tela ao recarregar a página (lendo
+  `Payment.rawPayload` salvo). O webhook
+  (`src/app/api/webhooks/mercado-pago/route.ts`) valida a assinatura HMAC
+  via `WebhookSignatureValidator` do SDK antes de qualquer efeito — porém
+  **sem** passar `toleranceSeconds`: a checagem de janela de tempo do SDK
+  compara `Date.now()` (ms) contra o `ts` do cabeçalho (que o Mercado Pago
+  envia em segundos), rejeitando toda notificação legítima; como
+  `processPaymentUpdate` já é idempotente, abrir mão dessa checagem
+  extra não compromete a segurança — a verificação de assinatura continua
+  ativa normalmente.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -172,7 +206,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 2. Catálogo Base — **concluída**
 3. Vitrine & Busca — **concluída**
 4. Carrinho & Checkout — **concluída**
-5. Pagamentos (Mercado Pago)
+5. Pagamentos (Mercado Pago) — **concluída**
 6. Pedidos & Rastreio
 7. Painel Admin completo
 8. Estoque

@@ -66,8 +66,25 @@ chaves listadas em `.env.example`:
 
 ## Webhooks Mercado Pago
 
-Configurar a URL `https://<dominio>/api/webhooks/mercado-pago` no painel do
-Mercado Pago para notificações de pagamento (Pix, cartão, boleto).
+1. No painel do Mercado Pago, em **Suas integrações > [sua aplicação] >
+   Webhooks > Configurar notificações**, cadastre a URL:
+   ```
+   https://<dominio>/api/webhooks/mercado-pago
+   ```
+2. Assine o evento **Pagamentos**.
+3. Copie a **assinatura secreta** exibida na mesma tela e defina como
+   `MERCADO_PAGO_WEBHOOK_SECRET` nas variáveis de ambiente do deploy — ela é
+   usada por `src/app/api/webhooks/mercado-pago/route.ts` para validar, via
+   HMAC, que a notificação recebida realmente veio do Mercado Pago
+   (`WebhookSignatureValidator` do SDK) antes de processar qualquer alteração
+   de pedido.
+4. O handler é idempotente: reenvios da mesma notificação (comuns no Mercado
+   Pago) não duplicam baixa de estoque nem lançamento financeiro — o status
+   só é reaplicado se realmente mudou (`src/modules/payments/services/process-payment-update.ts`).
+5. Sem webhook configurado, o pagamento ainda pode ser confirmado
+   manualmente pelo comprador na página do pedido (botão "verificar
+   pagamento", que consulta a API do Mercado Pago sob demanda), mas o
+   webhook é o caminho principal em produção.
 
 ## Domínio e SEO
 

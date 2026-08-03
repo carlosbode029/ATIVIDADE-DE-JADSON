@@ -92,6 +92,7 @@ model User {
   name           String
   email          String   @unique
   phone          String?
+  document       String?
   role           Role     @default(CUSTOMER)
   avatarUrl      String?
   createdAt      DateTime @default(now())

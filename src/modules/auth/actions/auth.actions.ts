@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { siteUrl } from "@/lib/site-url";
 import { translateAuthError } from "@/modules/auth/services/translate-auth-error";
 import { syncUserFromSupabase } from "@/modules/auth/services/user-sync.service";
 import { mergeGuestCartIntoUser } from "@/modules/cart/services/merge-guest-cart";
@@ -19,10 +20,6 @@ import {
 } from "@/modules/auth/schemas/auth.schema";
 
 type ActionResult = { error?: string };
-
-function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 export async function signUp(input: SignUpInput): Promise<ActionResult> {
   const parsed = signUpSchema.safeParse(input);
