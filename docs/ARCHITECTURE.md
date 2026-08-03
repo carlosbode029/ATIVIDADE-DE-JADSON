@@ -86,13 +86,22 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
 - **shadcn/ui**: componentes escritos manualmente em `src/components/ui`
   seguindo a convenção oficial, pois o registry remoto (`ui.shadcn.com`) está
   bloqueado pela política de rede deste ambiente.
+- **Auth (Fase 1)**: sessão via cookies (`@supabase/ssr`), sincronização de
+  `public.User` feita na aplicação (`modules/auth/services/user-sync.service.ts`),
+  chamada após signup por senha, login social e confirmação por e-mail — sem
+  trigger de banco. Links de e-mail (confirmação/recuperação) e o retorno do
+  OAuth do Google passam por `src/app/auth/confirm` e `src/app/auth/callback`
+  respectivamente, que trocam o token por sessão e então sincronizam o
+  usuário. Módulo `customers` cuida de perfil e endereços do cliente
+  autenticado (`modules/customers`); `auth` cuida apenas de
+  identidade/sessão.
 
 ## Fases de desenvolvimento
 
 Ver o plano completo aprovado no histórico do projeto. Resumo:
 
-0. Fundação (scaffold, tema, Prisma, integrações base) — **em andamento**
-1. Auth & Contas
+0. Fundação (scaffold, tema, Prisma, integrações base) — **concluída**
+1. Auth & Contas — **concluída**
 2. Catálogo Base
 3. Vitrine & Busca
 4. Carrinho & Checkout

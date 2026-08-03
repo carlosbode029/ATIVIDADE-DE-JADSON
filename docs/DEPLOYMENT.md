@@ -37,15 +37,32 @@ chaves listadas em `.env.example`:
   ```
 - Build de produção: `npm run build` (padrão da Vercel).
 
-## Autenticação social
+## Autenticação (Supabase Auth)
 
 - **Google**: configurar OAuth no Supabase Auth (Dashboard → Authentication →
   Providers) com Client ID/Secret do Google Cloud Console; adicionar a URL de
-  callback do Supabase nas origens autorizadas do Google.
+  callback do Supabase (`https://[PROJECT_REF].supabase.co/auth/v1/callback`)
+  nas origens autorizadas do Google. No Google Cloud Console, autorize também
+  a origem `https://<dominio-da-loja>`.
 - **Apple**: requer Apple Developer Program (conta paga) para gerar o Services
   ID, Key e Team ID exigidos pelo Supabase. Ativar quando a conta estiver
   disponível — o restante do fluxo de auth já está preparado para múltiplos
   provedores.
+- **Redirect URLs**: em Authentication → URL Configuration, adicionar
+  `https://<dominio>/auth/callback` (OAuth) e `https://<dominio>/auth/confirm`
+  (confirmação de e-mail e recuperação de senha) à lista de Redirect URLs
+  permitidas. Sem isso o Supabase rejeita o redirecionamento pós-login.
+- **Templates de e-mail** (Authentication → Email Templates): tanto o
+  template "Confirm signup" quanto "Reset password" precisam apontar para a
+  rota `/auth/confirm` da aplicação, e não para o link padrão do Supabase.
+  Substitua o corpo do link por:
+  ```
+  {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type={{ .Type }}&next={{ .RedirectTo }}
+  ```
+  A rota `src/app/auth/confirm/route.ts` troca o `token_hash` por uma sessão
+  válida (`supabase.auth.verifyOtp`) e redireciona para `next` — que já é
+  preenchido pela aplicação (`emailRedirectTo` no cadastro, `redirectTo` na
+  recuperação de senha).
 
 ## Webhooks Mercado Pago
 
