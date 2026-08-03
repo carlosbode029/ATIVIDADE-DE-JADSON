@@ -95,6 +95,21 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   usuário. Módulo `customers` cuida de perfil e endereços do cliente
   autenticado (`modules/customers`); `auth` cuida apenas de
   identidade/sessão.
+- **Admin (Fase 2)**: como o painel de gestão de staff só chega na Fase 7,
+  a primeira conta ADMIN é criada com `npm run admin:promote -- email`
+  (`prisma/promote-admin.ts`), que atualiza `public.User.role` e sincroniza
+  `app_metadata.role` no Supabase (lido pelo middleware). Entidades de
+  referência (país, marca, temporada, liga, time) compartilham o mesmo
+  componente genérico `EntityFormDialog` (tabela + dialog de criar/editar);
+  categorias e produtos têm telas dedicadas por serem mais complexas
+  (hierarquia de subcategoria; mídia/variantes/patches/relacionados).
+  Upload de imagem/vídeo passa por uma Server Action única
+  (`modules/catalog/actions/media.actions.ts`) que envia o arquivo ao
+  Cloudinary via `upload_stream`. Ao editar um produto, imagens/vídeos são
+  substituídos por completo (sem dependentes no schema), enquanto variantes
+  e patches são reconciliados por id — podem estar referenciados em
+  `OrderItem`/`CartItem`, então a remoção de um item em uso falha com uma
+  mensagem amigável em vez de quebrar a integridade referencial.
 
 ## Fases de desenvolvimento
 
@@ -102,7 +117,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 
 0. Fundação (scaffold, tema, Prisma, integrações base) — **concluída**
 1. Auth & Contas — **concluída**
-2. Catálogo Base
+2. Catálogo Base — **concluída**
 3. Vitrine & Busca
 4. Carrinho & Checkout
 5. Pagamentos (Mercado Pago)

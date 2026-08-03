@@ -16,11 +16,18 @@ Documentação completa em [`docs/`](./docs):
 cp .env.example .env      # preencha com suas credenciais
 npm install
 npm run db:migrate        # cria as tabelas no banco configurado
-npm run db:seed           # popula as categorias principais
+npm run db:seed           # popula categorias, países, ligas, marcas e times
 npm run dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000).
+
+Para acessar o painel administrativo (`/admin`), cadastre-se normalmente pela
+loja e depois promova sua conta:
+
+```bash
+npm run admin:promote -- seu-email@dominio.com
+```
 
 ## Scripts
 
@@ -34,3 +41,4 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `npm run db:deploy` | Aplica migrations (produção) |
 | `npm run db:seed` | Popula dados iniciais |
 | `npm run db:studio` | Prisma Studio |
+| `npm run admin:promote -- email@dominio.com` | Promove um usuário a ADMIN |

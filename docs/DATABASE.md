@@ -70,7 +70,17 @@ como elas se relacionam.
 
 - **Message** — mensagens do cliente para o suporte.
 - **AuditLog** — trilha de auditoria de ações administrativas
-  (`action`, `entity`, `entityId`, `metadata`).
+  (`action`, `entity`, `entityId`, `metadata`). Toda mutação do painel admin
+  (`src/modules/catalog/actions/*`) grava um registro via
+  `src/lib/audit-log.ts`.
+
+## Dados de referência (seed)
+
+`prisma/seed.ts` popula, além das 15 categorias da loja, um conjunto inicial
+de dados reais de futebol para permitir testar o cadastro de produtos de
+ponta a ponta: 8 países, 7 ligas/competições (incluindo a UEFA Champions
+League, sem país associado), 6 marcas e 10 times com seus vínculos de
+país/liga. Todos com `upsert` idempotente — seguro rodar múltiplas vezes.
 
 ## Convenções
 
