@@ -92,3 +92,51 @@ chaves listadas em `.env.example`:
 - Validar `NEXT_PUBLIC_SITE_URL` (usado em metadata, sitemap e Open Graph).
 - Enviar `sitemap.xml` ao Google Search Console após o primeiro deploy com
   produtos publicados.
+
+## Primeiro administrador
+
+A UI de gestão de equipe (`/admin/equipe`) só existe depois que já existe
+pelo menos um `ADMIN` — para o primeiro, use o script de bootstrap:
+
+```bash
+npm run admin:promote -- seu@email.com
+```
+
+O e-mail precisa já ter feito login/cadastro na loja pelo menos uma vez
+(precisa existir em `public.User`). O script promove tanto o Prisma
+(`User.role`) quanto o `app_metadata.role` no Supabase, que é o que o
+middleware lê para liberar `/admin`. A partir daí, esse admin pode promover
+qualquer outra pessoa (ex.: um sócio) direto pela UI em `/admin/equipe`,
+sem precisar rodar o script de novo.
+
+## Testes e CI
+
+- `npm test` — testes unitários (funções puras, sem banco), rápidos o
+  suficiente para rodar a qualquer momento.
+- `npm run test:integration` — exercita fluxos críticos (pagamento,
+  status de pedido, estoque, financeiro, promoções) contra um Postgres
+  real; requer `DATABASE_URL` apontando para um banco descartável (nunca
+  rodar contra produção).
+- `npm run test:all` roda os dois juntos.
+- `.github/workflows/ci.yml` roda a cada push/PR: sobe um Postgres de
+  serviço, aplica migrations, semeia dados de referência, e roda
+  typecheck, lint, a suíte de testes completa e o build — com credenciais
+  placeholder do Supabase (a build/testes não fazem nenhuma chamada real
+  de rede para Supabase/Cloudinary/Mercado Pago, só o schema/lógica local).
+
+## Checklist de lançamento
+
+- [ ] Variáveis de ambiente configuradas na Vercel (seção acima).
+- [ ] `npm run db:deploy` aplicado no banco de produção.
+- [ ] `npm run db:seed` rodado (categorias, países, ligas, marcas, times,
+      transportadora e cupom de referência).
+- [ ] Primeiro admin promovido (`npm run admin:promote -- seu@email.com`).
+- [ ] Login Google configurado no Supabase Auth + Redirect URLs cadastradas.
+- [ ] Templates de e-mail do Supabase apontando para `/auth/confirm`.
+- [ ] Webhook do Mercado Pago cadastrado e `MERCADO_PAGO_WEBHOOK_SECRET`
+      configurado.
+- [ ] Ao menos um produto real cadastrado com estoque, para o catálogo não
+      ficar vazio no primeiro acesso.
+- [ ] Domínio customizado apontado e `NEXT_PUBLIC_SITE_URL` atualizado.
+- [ ] `sitemap.xml` enviado ao Google Search Console.
+- [ ] CI verde no commit que será promovido a produção.

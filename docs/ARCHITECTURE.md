@@ -292,6 +292,29 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   mantiveram `unoptimized` de propósito — são previews de 40-80px que não
   afetam o Core Web Vitals de quem compra, e otimizá-las só gastaria cota de
   otimização de imagem à toa.
+- **QA, testes e deploy (Fase 12)**: `npm test` (Vitest) cobre funções
+  puras sem depender de banco — `mapMercadoPagoStatus`,
+  `extractPixDisplayData`/`extractBoletoDisplayData`, `buildTrackingUrl`,
+  `buildWhatsAppLink`, `slugify`, `computeCartTotals`. `npm run
+  test:integration` porta pra testes permanentes os cenários que, até essa
+  fase, eram validados por scripts descartáveis (`prisma/_validate-*.ts`,
+  escritos e apagados a cada fase) contra o Postgres local — pagamento
+  aprovado/recusado (idempotência incluída), transições de status de
+  pedido, despacho/rastreio, reembolso, movimentação de estoque
+  (entrada/saída/ajuste), resumo financeiro e aplicação/remoção de
+  desconto de promoção. **Armadilha real encontrada ao escrever esses
+  testes**: os arquivos de integração compartilham o mesmo Postgres e
+  algumas fixtures de seed (ex.: a primeira `ProductVariant` retornada por
+  `findFirst()`) — o Vitest roda arquivos de teste em paralelo por padrão,
+  então dois arquivos mexendo na mesma linha ao mesmo tempo causavam uma
+  corrida de escrita que corrompia o `stockQuantity` esperado por outro
+  arquivo. Corrigido com `fileParallelism: false` no `vitest.config.mts`
+  — os testes de integração contra um banco compartilhado precisam rodar
+  em série, não em paralelo. `.github/workflows/ci.yml` roda a suíte
+  inteira (typecheck, lint, testes, build) a cada push/PR com um Postgres
+  de serviço e credenciais placeholder do Supabase — build e testes não
+  fazem nenhuma chamada de rede real para Supabase/Cloudinary/Mercado
+  Pago, só exercitam schema e lógica local.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -325,4 +348,4 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 9. Financeiro — **concluída**
 10. Marketing & WhatsApp — **concluída**
 11. SEO & Performance — **concluída**
-12. QA, testes e deploy
+12. QA, testes e deploy — **concluída**

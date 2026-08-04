@@ -13,7 +13,11 @@
     "db:deploy": "DATABASE_URL=\"$DIRECT_URL\" prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "admin:promote": "tsx prisma/promote-admin.ts"
+    "admin:promote": "tsx prisma/promote-admin.ts",
+    "test": "vitest run src",
+    "test:watch": "vitest src",
+    "test:integration": "vitest run tests/integration",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -64,6 +68,7 @@
     "prisma": "^7.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
