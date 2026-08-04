@@ -12,6 +12,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/modules/orders/constants";
 import { getOrderById } from "@/modules/orders/queries/get-order-by-id";
+import { buildTrackingUrl } from "@/modules/orders/services/tracking-url";
 import {
   extractBoletoDisplayData,
   extractPixDisplayData,
@@ -44,6 +45,10 @@ export default async function PedidoPage({
   }
 
   const payment = order.payments[0];
+  const trackingUrl = buildTrackingUrl(
+    order.carrier?.trackingUrlTemplate,
+    order.trackingCode,
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
@@ -121,7 +126,19 @@ export default async function PedidoPage({
           </p>
           {order.trackingCode && (
             <p className="mt-1 text-muted-foreground">
-              Rastreio: {order.trackingCode}
+              Rastreio ({order.carrier?.name}):{" "}
+              {trackingUrl ? (
+                <a
+                  href={trackingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gold underline underline-offset-2"
+                >
+                  {order.trackingCode}
+                </a>
+              ) : (
+                order.trackingCode
+              )}
             </p>
           )}
         </div>

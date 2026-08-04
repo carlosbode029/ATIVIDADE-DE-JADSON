@@ -6,6 +6,7 @@ import {
   Globe2,
   LayoutDashboard,
   Percent,
+  ShoppingCart,
   Shirt,
   Tags,
   Truck,
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
   { href: "/admin/produtos", label: "Produtos", icon: Shirt },
   { href: "/admin/categorias", label: "Categorias", icon: Tags },
   { href: "/admin/marcas", label: "Marcas", icon: Tags },

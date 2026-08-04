@@ -180,6 +180,25 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   `processPaymentUpdate` já é idempotente, abrir mão dessa checagem
   extra não compromete a segurança — a verificação de assinatura continua
   ativa normalmente.
+- **Pedidos & Rastreio (Fase 6)**: gestão de pedidos é só para admin/staff
+  (`requireAdminUser`), em `modules/orders/actions/order-management.actions.ts`.
+  As transições manuais de status são restritas por uma tabela explícita
+  (`ALLOWED_MANUAL_TRANSITIONS`) — `PENDING → PAID/CANCELLED` continua
+  automático via pagamento (Fase 5) e nunca passa por essas Server Actions;
+  o admin só pode mover `PAID/PROCESSING → SHIPPED → DELIVERED`. Despachar
+  (`updateOrderTracking`) grava `Order.carrierId`/`trackingCode` — um campo
+  separado do `Order.shippingMethod.carrier` (que é só a transportadora
+  *cotada* no checkout; a que efetivamente despacha pode ser outra) — e
+  monta a URL de rastreio substituindo o literal `{codigo}` no
+  `Carrier.trackingUrlTemplate` (`modules/orders/services/tracking-url.ts`),
+  convenção que já existia no placeholder do formulário de transportadoras
+  desde a Fase 4. `refundOrder` chama `PaymentRefund.total` do SDK do
+  Mercado Pago sobre o pagamento `APPROVED` mais recente e, só se a API
+  confirmar, aplica numa transação local: `Order.status = REFUNDED`,
+  `Payment.status = REFUNDED`, devolve os itens ao estoque
+  (`StockMovement` tipo `IN`) e lança um `FinanceEntry` do tipo `EXPENSE` —
+  o pedido nunca é marcado como reembolsado se a chamada ao Mercado Pago
+  falhar. Toda mutação registra `AuditLog`.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -207,7 +226,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 3. Vitrine & Busca — **concluída**
 4. Carrinho & Checkout — **concluída**
 5. Pagamentos (Mercado Pago) — **concluída**
-6. Pedidos & Rastreio
+6. Pedidos & Rastreio — **concluída**
 7. Painel Admin completo
 8. Estoque
 9. Financeiro
