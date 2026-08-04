@@ -235,6 +235,18 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   histórico por variante é carregado sob demanda por uma Server Action
   (`getStockMovements`) só quando o admin abre o dialog, evitando buscar
   movimentações de todas as linhas da tabela de uma vez.
+- **Financeiro (Fase 9)**: `/admin/financeiro` lê a mesma tabela
+  `FinanceEntry` que vendas (Fase 5, `INCOME`) e reembolsos (Fase 6,
+  `EXPENSE`) já alimentam automaticamente — não existe uma entidade
+  separada de "relatório". Lançamentos manuais (despesas de fornecedor,
+  marketing etc.) usam o mesmo CRUD de sempre, mas com uma regra a mais:
+  qualquer `FinanceEntry` com `orderId` preenchido foi gerado pelo sistema
+  e fica somente leitura (a linha mostra "Automático" em vez dos botões de
+  editar/excluir, e a Server Action rejeita a mutação mesmo que alguém
+  tente direto) — editar um valor de venda por fora deixaria o financeiro
+  dessincronizado do pedido real. O resumo (receita, despesa, saldo) é
+  calculado sobre o mesmo filtro de período aplicado à tabela, então os
+  cards batem exatamente com as linhas listadas abaixo.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -265,7 +277,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 6. Pedidos & Rastreio — **concluída**
 7. Painel Admin completo — **concluída**
 8. Estoque — **concluída**
-9. Financeiro
+9. Financeiro — **concluída**
 10. Marketing & WhatsApp
 11. SEO & Performance
 12. QA, testes e deploy

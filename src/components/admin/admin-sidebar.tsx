@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Boxes,
   Contact,
+  DollarSign,
   Globe2,
   Image as ImageIcon,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const LINKS = [
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/campanhas", label: "Campanhas", icon: Megaphone },
   { href: "/admin/fornecedores", label: "Fornecedores", icon: Contact },
+  { href: "/admin/financeiro", label: "Financeiro", icon: DollarSign },
 ] as const;
 
 export function AdminSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
