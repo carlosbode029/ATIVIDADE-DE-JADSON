@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Boxes,
   Contact,
   Globe2,
   Image as ImageIcon,
@@ -24,6 +25,7 @@ const LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
   { href: "/admin/produtos", label: "Produtos", icon: Shirt },
+  { href: "/admin/estoque", label: "Estoque", icon: Boxes },
   { href: "/admin/categorias", label: "Categorias", icon: Tags },
   { href: "/admin/marcas", label: "Marcas", icon: Tags },
   { href: "/admin/times", label: "Times", icon: Users },

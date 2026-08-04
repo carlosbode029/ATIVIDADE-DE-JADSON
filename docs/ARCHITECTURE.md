@@ -219,6 +219,22 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   Dashboard ganhou receita líquida do mês (soma `FinanceEntry` do tipo
   `INCOME` menos `EXPENSE` dentro do mês corrente) e lista dos pedidos mais
   recentes.
+- **Estoque (Fase 8)**: `/admin/estoque` lista variantes com busca (produto/SKU)
+  e filtro de estoque baixo via `$queryRaw`
+  (`modules/inventory/queries/inventory.queries.ts`) — necessário porque
+  comparar duas colunas da mesma linha (`stockQuantity <= lowStockThreshold`)
+  não é expressável em um `where` normal do Prisma; os fragmentos de busca e
+  filtro são compostos com `Prisma.sql`/`Prisma.empty` para manter uma única
+  query seja qual for a combinação de filtros. Toda movimentação manual
+  passa por `createStockMovement`: `IN` soma, `OUT` subtrai e bloqueia se a
+  quantidade pedida for maior que o saldo disponível, `ADJUSTMENT` recebe o
+  **valor absoluto** desejado (não um delta) e a Server Action calcula a
+  diferença para registrar em `StockMovement.quantity` — a UI troca o rótulo
+  do campo de quantidade conforme o tipo escolhido para deixar isso claro.
+  Toda movimentação e o novo saldo são gravados na mesma transação, e o
+  histórico por variante é carregado sob demanda por uma Server Action
+  (`getStockMovements`) só quando o admin abre o dialog, evitando buscar
+  movimentações de todas as linhas da tabela de uma vez.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -248,7 +264,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 5. Pagamentos (Mercado Pago) — **concluída**
 6. Pedidos & Rastreio — **concluída**
 7. Painel Admin completo — **concluída**
-8. Estoque
+8. Estoque — **concluída**
 9. Financeiro
 10. Marketing & WhatsApp
 11. SEO & Performance
