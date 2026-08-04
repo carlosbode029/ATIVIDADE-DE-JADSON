@@ -247,6 +247,29 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   dessincronizado do pedido real. O resumo (receita, despesa, saldo) é
   calculado sobre o mesmo filtro de período aplicado à tabela, então os
   cards batem exatamente com as linhas listadas abaixo.
+- **Marketing & WhatsApp (Fase 10)**: `Promotion` é só o plano/registro da
+  campanha (nome, desconto, período, produtos/categorias vinculados) — o
+  desconto em si vive em `Product.promoPrice`, o mesmo campo que já era
+  lido em todo o pipeline de preço (`ProductCard`, PDP, `computeCartTotals`,
+  `createOrder`) desde a Fase 2. Em vez de um motor de regras avaliado a
+  cada leitura de preço (o que exigiria tocar checkout/carrinho/pedido já
+  testados), `applyPromotion` grava o `promoPrice` calculado diretamente
+  nos produtos afetados quando o admin clica "Aplicar desconto", e
+  `removePromotionDiscount` limpa (`null`) quando clica "Remover desconto"
+  — ação explícita, não automática por `startsAt`/`expiresAt`, porque não
+  há como saber se um `promoPrice` já existente veio desta promoção, de
+  outra, ou foi setado manualmente no formulário de produto (schema não
+  guarda essa proveniência); um "revert" automático arriscaria apagar um
+  preço promocional que não é desta campanha. `startsAt`/`expiresAt` ficam
+  guardados só como informação de planejamento. Produtos afetados por
+  categoria usam `categoryId` **e** `subcategoryId` do Product (uma
+  promoção pode mirar uma subcategoria específica, ex. "Camisas Retrô"), e
+  a união com produtos vinculados diretamente é deduplicada antes de
+  aplicar. O botão flutuante e o CTA "Comprar pelo WhatsApp" da PDP já
+  existiam desde a Fase 3; esta fase fechou os dois pontos que só tinham
+  texto estático sem link real — indisponibilidade do cartão
+  (`payment-panel.tsx`) e pedido cancelado (`/pedido/[id]`) — usando o
+  mesmo `buildWhatsAppLink` (`src/lib/whatsapp.ts`).
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -278,6 +301,6 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 7. Painel Admin completo — **concluída**
 8. Estoque — **concluída**
 9. Financeiro — **concluída**
-10. Marketing & WhatsApp
+10. Marketing & WhatsApp — **concluída**
 11. SEO & Performance
 12. QA, testes e deploy

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { initMercadoPago, CardPayment } from "@mercadopago/sdk-react";
-import { Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { PAYMENT_STATUS_LABELS } from "@/modules/orders/constants";
 import {
   createBoletoCharge,
@@ -34,6 +35,7 @@ type BoletoDisplay = {
 
 type PaymentPanelProps = {
   orderId: string;
+  orderNumber: string;
   orderTotal: number;
   paymentMethod: "PIX" | "CREDIT_CARD" | "BOLETO";
   paymentStatus: string;
@@ -91,6 +93,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
 export function PaymentPanel({
   orderId,
+  orderNumber,
   orderTotal,
   paymentMethod,
   paymentStatus,
@@ -304,16 +307,25 @@ export function PaymentPanel({
   }
 
   if (!publicKey) {
+    const supportHref = buildWhatsAppLink(
+      `Olá! Não consegui pagar com cartão no pedido #${orderNumber} e gostaria de ajuda para concluir a compra.`,
+    );
+
     return (
       <Card>
         <CardHeader>
           <CardTitle>Pagamento via cartão</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Pagamento por cartão indisponível no momento. Fale conosco pelo
-            WhatsApp para concluir o pedido.
+            Pagamento por cartão indisponível no momento.
           </p>
+          <Button asChild className="w-full">
+            <a href={supportHref} target="_blank" rel="noreferrer noopener">
+              <MessageCircle className="size-4" />
+              Falar no WhatsApp para concluir o pedido
+            </a>
+          </Button>
         </CardContent>
       </Card>
     );

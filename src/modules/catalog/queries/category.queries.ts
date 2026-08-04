@@ -22,3 +22,10 @@ export function getCategoryBySlug(slug: string) {
     where: { slug, isActive: true },
   });
 }
+
+export function listAllCategoriesFlat() {
+  return prisma.category.findMany({
+    select: { id: true, name: true, parentId: true },
+    orderBy: { name: "asc" },
+  });
+}

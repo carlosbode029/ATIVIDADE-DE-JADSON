@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CheckCircle2, FileText } from "lucide-react";
+import { CheckCircle2, FileText, MessageCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PaymentPanel } from "@/components/storefront/payment-panel";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { getCurrentUser } from "@/modules/auth/queries/get-current-user";
 import {
   ORDER_STATUS_LABELS,
@@ -169,6 +170,7 @@ export default async function PedidoPage({
         <div className="mt-6">
           <PaymentPanel
             orderId={order.id}
+            orderNumber={order.orderNumber}
             orderTotal={Number(order.total)}
             paymentMethod={payment.method}
             paymentStatus={payment.status}
@@ -188,6 +190,27 @@ export default async function PedidoPage({
               <FileText className="size-4" />
               Ver / baixar comprovante
             </Link>
+          </Button>
+        </div>
+      )}
+
+      {order.status === "CANCELLED" && (
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 text-center">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Este pedido foi cancelado. Se você esperava outro resultado, fale
+            com a gente.
+          </p>
+          <Button asChild>
+            <a
+              href={buildWhatsAppLink(
+                `Olá! Meu pedido #${order.orderNumber} foi cancelado e eu gostaria de entender o que aconteceu.`,
+              )}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <MessageCircle className="size-4" />
+              Falar no WhatsApp
+            </a>
           </Button>
         </div>
       )}
