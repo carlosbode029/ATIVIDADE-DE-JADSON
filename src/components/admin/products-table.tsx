@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Upload } from "lucide-react";
+import { ImageUp, Plus, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,12 @@ export function ProductsTable({ result }: { result: SerializedProductsResult }) 
             <Link href="/admin/produtos/importar">
               <Upload className="size-4" />
               Importar em massa
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/produtos/fotos">
+              <ImageUp className="size-4" />
+              Fotos em massa
             </Link>
           </Button>
           <Button variant="gold" asChild>
