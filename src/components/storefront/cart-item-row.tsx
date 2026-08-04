@@ -72,7 +72,7 @@ export function CartItemRow({ item }: { item: CartItemRowData }) {
             src={item.imageUrl}
             alt={item.productName}
             fill
-            unoptimized
+            sizes="80px"
             className="object-cover"
           />
         )}

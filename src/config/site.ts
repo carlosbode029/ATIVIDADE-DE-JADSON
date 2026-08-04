@@ -4,7 +4,6 @@ export const siteConfig = {
   description:
     "BK IMPORTS — loja premium de camisas de futebol. Times brasileiros, europeus, seleções e edições retrô, com modelo torcedor e jogador.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://bkimports.com.br",
-  ogImage: "/og-image.jpg",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "",
   links: {
     instagram: "https://instagram.com/bkimports",

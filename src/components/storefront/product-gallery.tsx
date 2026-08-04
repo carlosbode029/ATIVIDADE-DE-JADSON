@@ -42,7 +42,7 @@ export function ProductGallery({
             src={active.url}
             alt={productName}
             fill
-            unoptimized
+            sizes="(min-width: 1024px) 50vw, 100vw"
             className="object-cover"
             priority
           />
@@ -72,7 +72,7 @@ export function ProductGallery({
                   src={item.url}
                   alt=""
                   fill
-                  unoptimized
+                  sizes="120px"
                   className="object-cover"
                 />
               ) : (

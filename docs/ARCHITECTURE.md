@@ -270,6 +270,28 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   texto estático sem link real — indisponibilidade do cartão
   (`payment-panel.tsx`) e pedido cancelado (`/pedido/[id]`) — usando o
   mesmo `buildWhatsAppLink` (`src/lib/whatsapp.ts`).
+- **SEO & Performance (Fase 11)**: `src/app/robots.ts` e `src/app/sitemap.ts`
+  usam as convenções de arquivo do App Router (nada de XML escrito à mão) —
+  o sitemap lê produtos ativos, categorias ativas e times direto do banco,
+  então cresce junto com o catálogo sem manutenção manual; robots bloqueia
+  `/admin`, `/conta`, `/checkout`, `/carrinho`, `/api` e `/pedido` (áreas
+  privadas/dinâmicas sem valor de indexação). `siteConfig.ogImage` apontava
+  para `/og-image.jpg`, um arquivo que nunca existiu em `public/` (404 real
+  em qualquer preview de link) — trocado por `opengraph-image.tsx` e
+  `icon.tsx` usando `ImageResponse` do `next/og`: a imagem é gerada a partir
+  de JSX/CSS a cada request (cacheável via CDN), sem depender de nenhum
+  asset externo ou ferramenta de design. Imagens do Cloudinary usavam
+  `unoptimized` em todo componente voltado ao cliente, mesmo com
+  `res.cloudinary.com` já liberado em `next.config.ts` `images.remotePatterns`
+  — ou seja, a otimização automática do `next/image` (redimensionamento por
+  breakpoint, conversão pra WebP/AVIF, lazy loading) estava desligada à toa
+  em `ProductCard`, `ProductGallery`, `CartItemRow` e `PromoBannerStrip`;
+  removido nesses quatro (com `sizes` adicionado em todo uso de `fill`, já
+  que sem isso o Next assume 100vw e serve a imagem maior que o necessário).
+  As miniaturas internas do admin (`BannerManager`, `CategoryManager`)
+  mantiveram `unoptimized` de propósito — são previews de 40-80px que não
+  afetam o Core Web Vitals de quem compra, e otimizá-las só gastaria cota de
+  otimização de imagem à toa.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -302,5 +324,5 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 8. Estoque — **concluída**
 9. Financeiro — **concluída**
 10. Marketing & WhatsApp — **concluída**
-11. SEO & Performance
+11. SEO & Performance — **concluída**
 12. QA, testes e deploy
