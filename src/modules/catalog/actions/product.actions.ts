@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -8,7 +10,10 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slugify";
 import { requireAdminUser } from "@/modules/auth/services/require-admin";
 import {
+  bulkProductImportSchema,
   productSchema,
+  type BulkProductImportInput,
+  type BulkProductImportResult,
   type ProductInput,
 } from "@/modules/catalog/schemas/product.schema";
 
@@ -293,4 +298,95 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
 
   revalidatePath("/admin/produtos");
   return {};
+}
+
+/**
+ * Cria produtos-rascunho (inativos, sem foto/estoque) a partir de uma lista
+ * de nomes de time — um time por linha, precisa já existir em Times. Cada
+ * rascunho fica com preço zerado e some do storefront (isActive=false) até
+ * alguém completar foto, preço e tamanhos em /admin/produtos/[id].
+ */
+export async function bulkCreateProducts(
+  input: BulkProductImportInput,
+): Promise<{ error?: string } & Partial<BulkProductImportResult>> {
+  const parsed = bulkProductImportSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const admin = await requireAdminUser();
+  const { categoryId, seasonId, model, sleeveType, teamNames } = parsed.data;
+
+  const season = seasonId
+    ? await prisma.season.findUnique({ where: { id: seasonId } })
+    : null;
+  const modelLabel = model === "JOGADOR" ? "Jogador" : "Torcedor";
+
+  const created: string[] = [];
+  const skipped: BulkProductImportResult["skipped"] = [];
+
+  for (const rawLine of teamNames) {
+    const team = await prisma.team.findUnique({
+      where: { slug: slugify(rawLine) },
+    });
+    if (!team) {
+      skipped.push({
+        line: rawLine,
+        reason: "Time não encontrado — cadastre em Times antes de importar.",
+      });
+      continue;
+    }
+
+    const nameParts = ["Camisa", team.name, modelLabel];
+    if (season) nameParts.push(season.label);
+    const name = nameParts.join(" ");
+
+    let slug = slugify(name);
+    let suffix = 2;
+    while (
+      await prisma.product.findUnique({ where: { slug }, select: { id: true } })
+    ) {
+      slug = `${slugify(name)}-${suffix}`;
+      suffix += 1;
+    }
+
+    const draftCode = `RASCUNHO-${randomUUID().slice(0, 8).toUpperCase()}`;
+
+    try {
+      await prisma.product.create({
+        data: {
+          name,
+          slug,
+          description: "Descrição a ser preenchida.",
+          sku: draftCode,
+          internalCode: draftCode,
+          model,
+          sleeveType,
+          price: 0,
+          weightGrams: 200,
+          isActive: false,
+          categoryId,
+          seasonId: season?.id ?? null,
+          teamId: team.id,
+          countryId: team.countryId,
+        },
+      });
+      created.push(name);
+    } catch {
+      skipped.push({ line: rawLine, reason: "Erro ao criar o produto." });
+    }
+  }
+
+  if (created.length > 0) {
+    await recordAuditLog({
+      userId: admin.id,
+      action: "CREATE",
+      entity: "Product",
+      entityId: "bulk-import",
+      metadata: { count: created.length, names: created },
+    });
+    revalidatePath("/admin/produtos");
+  }
+
+  return { created, skipped };
 }

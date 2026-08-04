@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,12 @@ export function ProductsTable({ result }: { result: SerializedProductsResult }) 
             onChange={(e) => handleSearch(e.target.value)}
             className="w-64"
           />
+          <Button variant="outline" asChild>
+            <Link href="/admin/produtos/importar">
+              <Upload className="size-4" />
+              Importar em massa
+            </Link>
+          </Button>
           <Button variant="gold" asChild>
             <Link href="/admin/produtos/novo">
               <Plus className="size-4" />

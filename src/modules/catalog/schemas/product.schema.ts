@@ -68,3 +68,20 @@ export const productSchema = z.object({
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
+
+export const bulkProductImportSchema = z.object({
+  categoryId: z.string().trim().min(1, "Selecione a categoria"),
+  seasonId: optionalId,
+  model: z.enum(productModelValues),
+  sleeveType: z.enum(sleeveTypeValues),
+  teamNames: z
+    .array(z.string().trim().min(1))
+    .min(1, "Informe ao menos um time, um por linha"),
+});
+
+export type BulkProductImportInput = z.infer<typeof bulkProductImportSchema>;
+
+export type BulkProductImportResult = {
+  created: string[];
+  skipped: { line: string; reason: string }[];
+};
