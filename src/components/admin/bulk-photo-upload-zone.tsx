@@ -1,17 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { CheckCircle2, Loader2, Upload, XCircle } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Loader2, Trash2, Upload, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/slugify";
-import { attachDraftProductImage } from "@/modules/catalog/actions/product.actions";
+import { attachProductImageByTeamId } from "@/modules/catalog/actions/product.actions";
 import { uploadMedia } from "@/modules/catalog/actions/media.actions";
 
-type FileResult = {
-  fileName: string;
-  status: "uploading" | "matched" | "error";
+type TeamOption = { id: string; name: string; slug: string };
+
+type Status = "pending" | "uploading" | "done" | "error";
+
+type PendingImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  teamId: string;
+  status: Status;
   message: string;
 };
 
@@ -19,53 +33,83 @@ function stripExtension(fileName: string) {
   return fileName.replace(/\.[^./]+$/, "");
 }
 
-export function BulkPhotoUploadZone() {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function BulkPhotoUploadZone({ teams }: { teams: TeamOption[] }) {
+  const [items, setItems] = useState<PendingImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<FileResult[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
-  async function processFiles(fileList: FileList) {
+  function addFiles(fileList: FileList) {
     const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
-    if (files.length === 0) return;
+    const newItems: PendingImage[] = files.map((file) => {
+      const guessedSlug = slugify(stripExtension(file.name));
+      const match = teams.find((t) => t.slug === guessedSlug);
+      return {
+        id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        teamId: match?.id ?? "",
+        status: "pending",
+        message: match ? `Identificado: ${match.name}` : "Selecione o time",
+      };
+    });
+    setItems((prev) => [...prev, ...newItems]);
+  }
 
-    setIsProcessing(true);
-    setResults(files.map((f) => ({ fileName: f.name, status: "uploading", message: "Enviando..." })));
+  function updateTeam(id: string, teamId: string) {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, teamId, message: "" } : it)),
+    );
+  }
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const teamSlug = slugify(stripExtension(file.name));
+  function removeItem(id: string) {
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  }
+
+  async function sendAll() {
+    setIsSending(true);
+
+    for (const item of items) {
+      if (!item.teamId || item.status === "done") continue;
+
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === item.id ? { ...it, status: "uploading", message: "Enviando..." } : it,
+        ),
+      );
 
       const formData = new FormData();
-      formData.set("file", file);
+      formData.set("file", item.file);
       const uploadResult = await uploadMedia(formData, "image");
 
       if (uploadResult.error || !uploadResult.url) {
-        setResults((prev) =>
-          prev.map((r, idx) =>
-            idx === i
-              ? { ...r, status: "error", message: uploadResult.error ?? "Falha no envio." }
-              : r,
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, status: "error", message: uploadResult.error ?? "Falha no envio." }
+              : it,
           ),
         );
         continue;
       }
 
-      const attachResult = await attachDraftProductImage(teamSlug, uploadResult.url);
+      const attachResult = await attachProductImageByTeamId(item.teamId, uploadResult.url);
 
-      setResults((prev) =>
-        prev.map((r, idx) =>
-          idx === i
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === item.id
             ? attachResult.matched
-              ? { ...r, status: "matched", message: `Anexada a "${attachResult.productName}"` }
-              : { ...r, status: "error", message: attachResult.error ?? "Não encontrado." }
-            : r,
+              ? { ...it, status: "done", message: `Anexada a "${attachResult.productName}"` }
+              : { ...it, status: "error", message: attachResult.error ?? "Erro ao anexar." }
+            : it,
         ),
       );
     }
 
-    setIsProcessing(false);
+    setIsSending(false);
   }
+
+  const pendingWithoutTeam = items.filter((it) => !it.teamId && it.status === "pending").length;
+  const readyToSend = items.some((it) => it.teamId && it.status !== "done");
 
   return (
     <div className="space-y-4">
@@ -82,57 +126,106 @@ export function BulkPhotoUploadZone() {
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          if (e.dataTransfer.files.length > 0) {
-            void processFiles(e.dataTransfer.files);
-          }
+          if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
         }}
       >
         <Upload className="size-8 text-muted-foreground" />
         <p className="text-sm">
-          Arraste as fotos aqui — o nome do arquivo precisa ser o nome do time
-          (ex.: <code className="rounded bg-muted px-1">real-madrid.jpg</code>,{" "}
-          <code className="rounded bg-muted px-1">flamengo.png</code>).
+          Arraste quantas fotos quiser (o nome do arquivo não importa — você
+          escolhe o time de cada uma na lista abaixo).
         </p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files) void processFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={isProcessing}
-          onClick={() => inputRef.current?.click()}
-        >
-          Ou selecione os arquivos
-        </Button>
+        <label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" asChild>
+            <span>Ou selecione os arquivos</span>
+          </Button>
+        </label>
       </div>
 
-      {results.length > 0 && (
-        <div className="max-h-96 space-y-1 overflow-y-auto rounded-md border border-border p-3">
-          {results.map((r, index) => (
-            <div key={`${r.fileName}-${index}`} className="flex items-center gap-2 text-sm">
-              {r.status === "uploading" && (
-                <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
-              )}
-              {r.status === "matched" && (
-                <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-              )}
-              {r.status === "error" && (
-                <XCircle className="size-4 shrink-0 text-destructive" />
-              )}
-              <span className="font-medium">{r.fileName}</span>
-              <span className="text-muted-foreground">— {r.message}</span>
-            </div>
-          ))}
-        </div>
+      {items.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {items.length} foto(s){" "}
+              {pendingWithoutTeam > 0 && `— ${pendingWithoutTeam} sem time selecionado`}
+            </p>
+            <Button
+              type="button"
+              variant="gold"
+              size="sm"
+              disabled={isSending || !readyToSend}
+              onClick={sendAll}
+            >
+              {isSending && <Loader2 className="size-4 animate-spin" />}
+              Enviar tudo
+            </Button>
+          </div>
+
+          <div className="max-h-[32rem] space-y-2 overflow-y-auto rounded-md border border-border p-3">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-md border border-border p-2"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.previewUrl}
+                  alt=""
+                  className="size-14 shrink-0 rounded object-cover"
+                />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="truncate text-xs text-muted-foreground">{item.file.name}</p>
+                  <Select
+                    value={item.teamId}
+                    onValueChange={(value) => updateTeam(item.id, value)}
+                    disabled={item.status === "uploading" || item.status === "done"}
+                  >
+                    <SelectTrigger size="sm" className="w-full max-w-xs">
+                      <SelectValue placeholder="Selecione o time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex w-40 shrink-0 items-center gap-1 text-xs">
+                  {item.status === "uploading" && (
+                    <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                  )}
+                  {item.status === "done" && (
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                  )}
+                  {item.status === "error" && (
+                    <XCircle className="size-4 shrink-0 text-destructive" />
+                  )}
+                  <span className="truncate text-muted-foreground">{item.message}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={item.status === "uploading"}
+                  onClick={() => removeItem(item.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

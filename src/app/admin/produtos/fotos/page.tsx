@@ -1,27 +1,31 @@
 import type { Metadata } from "next";
 
 import { BulkPhotoUploadZone } from "@/components/admin/bulk-photo-upload-zone";
+import { listTeams } from "@/modules/catalog/queries/reference-data.queries";
 
 export const metadata: Metadata = {
   title: "Fotos em massa",
 };
 
-export default function FotosEmMassaPage() {
+export default async function FotosEmMassaPage() {
+  const teams = await listTeams();
+
   return (
     <div>
       <h1 className="mb-2 font-display text-2xl font-bold">
         Fotos em massa
       </h1>
       <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
-        Arraste várias fotos de uma vez. O sistema identifica o produto pelo{" "}
-        <strong>nome do arquivo</strong> — ele precisa ser o nome do time
-        (sem acento tanto faz, mas o nome tem que bater, ex.:{" "}
-        <code className="rounded bg-muted px-1">real-madrid.jpg</code> ou{" "}
-        <code className="rounded bg-muted px-1">Real Madrid.png</code> pro
-        time Real Madrid). Cada foto é enviada e anexada automaticamente ao
-        rascunho daquele time, sem precisar abrir o produto um por um.
+        Arraste (ou selecione) quantas fotos quiser, direto de onde elas
+        estiverem — não precisa renomear nada. Pra cada foto, escolha o time
+        na lista (o sistema já tenta adivinhar pelo nome do arquivo, mas
+        você pode trocar). Depois clica em <strong>Enviar tudo</strong> e o
+        sistema sobe cada uma e anexa ao produto certo, sem precisar abrir
+        um por um.
       </p>
-      <BulkPhotoUploadZone />
+      <BulkPhotoUploadZone
+        teams={teams.map((t) => ({ id: t.id, name: t.name, slug: t.slug }))}
+      />
     </div>
   );
 }

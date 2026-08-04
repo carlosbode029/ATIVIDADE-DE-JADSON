@@ -398,36 +398,25 @@ export type AttachDraftImageResult = {
 };
 
 /**
- * Recebe o nome de um arquivo (já em maiúsculas/acentos removidos pelo
- * cliente) e uma URL já enviada ao Cloudinary, casa com o time de mesmo
- * slug e anexa a imagem ao produto desse time que ainda não tem foto —
- * usado pelo upload de fotos em massa em /admin/produtos/fotos.
+ * Anexa uma imagem já enviada ao Cloudinary ao produto de um time
+ * específico (o que ainda não tem foto, se houver mais de um) — usado
+ * pelo upload de fotos em massa em /admin/produtos/fotos, onde o time é
+ * escolhido manualmente (ou adivinhado pelo nome do arquivo) na tela.
  */
-export async function attachDraftProductImage(
-  fileNameSlug: string,
+export async function attachProductImageByTeamId(
+  teamId: string,
   imageUrl: string,
 ): Promise<AttachDraftImageResult> {
   await requireAdminUser();
 
-  const team = await prisma.team.findUnique({ where: { slug: fileNameSlug } });
-  if (!team) {
-    return {
-      matched: false,
-      error: "Nenhum time encontrado com esse nome de arquivo.",
-    };
-  }
-
   const products = await prisma.product.findMany({
-    where: { teamId: team.id },
+    where: { teamId },
     include: { images: { select: { id: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   if (products.length === 0) {
-    return {
-      matched: false,
-      error: `Time "${team.name}" encontrado, mas sem produto cadastrado.`,
-    };
+    return { matched: false, error: "Esse time não tem produto cadastrado." };
   }
 
   const target = products.find((p) => p.images.length === 0) ?? products[0];
