@@ -14,3 +14,18 @@ export async function requireAdminUser() {
 
   return user;
 }
+
+/**
+ * Guarda mais restrita que `requireAdminUser`: usada só onde STAFF não deve
+ * ter acesso, como conceder/revogar permissões de outros usuários — do
+ * contrário um STAFF poderia se autopromover a ADMIN.
+ */
+export async function requireAdminOnly() {
+  const user = await getCurrentUser();
+
+  if (!user || user.role !== "ADMIN") {
+    throw new Error("Acesso restrito ao administrador principal.");
+  }
+
+  return user;
+}

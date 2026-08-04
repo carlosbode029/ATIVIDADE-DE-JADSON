@@ -29,7 +29,7 @@ export default async function AdminLayout({
               admin
             </span>
           </Link>
-          <AdminSidebar />
+          <AdminSidebar isAdmin={user.role === "ADMIN"} />
         </div>
         <div className="space-y-2">
           <Link

@@ -199,6 +199,26 @@ Inter (texto) + Playfair Display (títulos/display), carregadas via
   (`StockMovement` tipo `IN`) e lança um `FinanceEntry` do tipo `EXPENSE` —
   o pedido nunca é marcado como reembolsado se a chamada ao Mercado Pago
   falhar. Toda mutação registra `AuditLog`.
+- **Painel Admin completo (Fase 7)**: banners, campanhas e fornecedores
+  seguem o mesmo padrão CRUD das entidades de referência da Fase 2
+  (`EntityFormDialog` + Server Action + `requireAdminUser`). Banner é o
+  único dos três com um consumidor real na loja — `PromoBannerStrip` na
+  home busca banners ativos da posição `"HOME"`
+  (`modules/marketing/queries/banner.queries.ts`, `listActiveBanners`),
+  filtrando por `isActive` e pela janela `startsAt`/`expiresAt`; campanhas e
+  fornecedores são só para uso interno do admin, sem exibição pública.
+  Gestão de equipe (`/admin/equipe`) usa um guard mais restrito,
+  `requireAdminOnly` (só `ADMIN`, ao contrário do `requireAdminUser` comum
+  que também aceita `STAFF`) — do contrário um STAFF poderia se
+  autopromover. A troca de role bloqueia alterar a própria permissão
+  (evita se autorrebaixar sem querer) e sincroniza `app_metadata.role` no
+  Supabase antes de confirmar; se a chamada ao Supabase falhar, o Prisma é
+  revertido para não deixar as duas fontes divergentes — mesmo padrão do
+  script de bootstrap `prisma/promote-admin.ts`, que continua existindo só
+  para promover o primeiro admin (a UI cobre o dia a dia a partir daí).
+  Dashboard ganhou receita líquida do mês (soma `FinanceEntry` do tipo
+  `INCOME` menos `EXPENSE` dentro do mês corrente) e lista dos pedidos mais
+  recentes.
 - **Gotcha recorrente — `Decimal` do Prisma através da fronteira RSC**: um
   Server Component pode usar `Decimal` (price, value, basePrice...)
   livremente, mas o valor bruto **não pode ser passado como prop para um
@@ -227,7 +247,7 @@ Ver o plano completo aprovado no histórico do projeto. Resumo:
 4. Carrinho & Checkout — **concluída**
 5. Pagamentos (Mercado Pago) — **concluída**
 6. Pedidos & Rastreio — **concluída**
-7. Painel Admin completo
+7. Painel Admin completo — **concluída**
 8. Estoque
 9. Financeiro
 10. Marketing & WhatsApp

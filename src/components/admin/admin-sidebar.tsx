@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Contact,
   Globe2,
+  Image as ImageIcon,
   LayoutDashboard,
+  Megaphone,
   Percent,
+  ShieldCheck,
   ShoppingCart,
   Shirt,
   Tags,
@@ -29,14 +33,27 @@ const LINKS = [
   { href: "/admin/transportadoras", label: "Transportadoras", icon: Truck },
   { href: "/admin/fretes", label: "Fretes", icon: Truck },
   { href: "/admin/cupons", label: "Cupons", icon: Percent },
+  { href: "/admin/banners", label: "Banners", icon: ImageIcon },
+  { href: "/admin/campanhas", label: "Campanhas", icon: Megaphone },
+  { href: "/admin/fornecedores", label: "Fornecedores", icon: Contact },
 ] as const;
 
-export function AdminSidebar() {
+export function AdminSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const links = isAdmin
+    ? [
+        ...LINKS,
+        {
+          href: "/admin/equipe",
+          label: "Equipe",
+          icon: ShieldCheck,
+        } as const,
+      ]
+    : LINKS;
 
   return (
     <nav className="flex flex-col gap-1">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const isActive = "exact" in link
           ? pathname === link.href
           : pathname.startsWith(link.href);
