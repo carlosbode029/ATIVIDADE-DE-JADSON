@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { type FieldErrors, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { MediaUploadButton } from "@/components/admin/media-upload-button";
@@ -78,6 +78,7 @@ export function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("informacoes");
   const isEditing = Boolean(productId);
 
   const form = useForm<ProductInput>({
@@ -114,10 +115,65 @@ export function ProductForm({
     }
   }
 
+  const FIELD_TAB: Record<string, string> = {
+    name: "informacoes",
+    description: "informacoes",
+    sku: "informacoes",
+    internalCode: "informacoes",
+    model: "informacoes",
+    sleeveType: "informacoes",
+    price: "informacoes",
+    promoPrice: "informacoes",
+    weightGrams: "informacoes",
+    categoryId: "informacoes",
+    subcategoryId: "informacoes",
+    brandId: "informacoes",
+    seasonId: "informacoes",
+    leagueId: "informacoes",
+    countryId: "informacoes",
+    teamId: "informacoes",
+    images: "midia",
+    videos: "midia",
+    variants: "variacoes",
+    patches: "variacoes",
+    metaTitle: "seo",
+    metaDescription: "seo",
+    relatedProductIds: "seo",
+  };
+
+  const TAB_LABEL: Record<string, string> = {
+    informacoes: "Informações",
+    midia: "Mídia",
+    variacoes: "Variações e patches",
+    seo: "SEO e relacionados",
+  };
+
+  function onInvalid(errors: FieldErrors<ProductInput>) {
+    const fieldsWithError = Object.keys(errors);
+    const tabsWithError = Array.from(
+      new Set(fieldsWithError.map((field) => FIELD_TAB[field] ?? "informacoes")),
+    );
+
+    if (tabsWithError.length > 0) {
+      setActiveTab(tabsWithError[0]);
+    }
+
+    const tabLabels = tabsWithError.map((tab) => TAB_LABEL[tab]).join(", ");
+    setFormError(
+      tabsWithError.length > 0
+        ? `Falta preencher algo obrigatório na aba: ${tabLabels}.`
+        : "Confira os campos obrigatórios do formulário.",
+    );
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
-        <Tabs defaultValue="informacoes">
+      <form
+        onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+        className="space-y-6"
+        noValidate
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="informacoes">Informações</TabsTrigger>
             <TabsTrigger value="midia">Mídia</TabsTrigger>
